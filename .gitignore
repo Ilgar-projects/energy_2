@@ -1,0 +1,9 @@
+.idea/
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+venv/
+.venv/
+staticfiles/
+media/uploads/

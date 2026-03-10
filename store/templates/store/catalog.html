@@ -1,0 +1,44 @@
+{% extends "store/base.html" %}
+{% block title %}СТАРТ — Ассортимент{% endblock %}
+
+{% block content %}
+<section class="page-shell catalog-page">
+    <div class="catalog-scene">
+        <div class="catalog-copy">
+            <p class="eyebrow">ВЕСЬ АССОРТИМЕНТ</p>
+            <h1>ВЫБЕРИ СВОЙ <span>ЗАРЯД</span></h1>
+        </div>
+
+        <div class="catalog-grid">
+            {% for product in products %}
+                <article class="catalog-card theme-{{ product.theme }} catalog-card--{{ product.status }}">
+                    <div class="catalog-card__visual">
+                        <div class="catalog-card__aura"></div>
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                    </div>
+
+                    <div class="catalog-card__meta">
+                        <p class="catalog-card__brand">СТАРТ</p>
+                        <h2>{{ product.name }}</h2>
+                        <p class="catalog-card__flavor">{{ product.flavor }}</p>
+                    </div>
+
+                    <div class="catalog-card__footer">
+                        <div>
+                            <p class="catalog-card__price">{{ product.price|floatformat:0 }} ₽</p>
+                            <p class="catalog-card__stock">{{ product.stock_label }}</p>
+                        </div>
+                        {% if product.stock > 0 %}
+                            <a href="#" class="mini-button"><span>Забрать</span></a>
+                        {% else %}
+                            <span class="mini-button mini-button--disabled"><span>Нет в наличии</span></span>
+                        {% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state">Товары скоро появятся.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
