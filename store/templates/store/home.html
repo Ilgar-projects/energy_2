@@ -1,27 +1,20 @@
-{% extends "store/base.html" %}
-{% block title %}СТАРТ — Главная{% endblock %}
-
+{% extends 'store/base.html' %}
+{% load static %}
+{% block title %}Главная{% endblock %}
 {% block content %}
-<section class="page-shell hero-page">
-    {% if hero %}
-    <div class="hero-stage theme-{{ hero.theme }}">
-        <div class="hero-stage__veil"></div>
-        <p class="hero-stage__subtitle">Энергия с первого глотка</p>
-
-        <div class="hero-can-wrap">
-            <div class="hero-can-glow"></div>
-            <img class="hero-can" src="{{ hero.image_url }}" alt="{{ hero.name }}">
-            <div class="hero-orbit"></div>
+<section class="page page--background hero" aria-label="Главная">
+    <div class="hero__inner">
+        <div class="hero__visual">
+            <img
+                class="hero__can"
+                src="{% static 'store/img/start-green-apple.png' %}"
+                alt="Энергетик СТАРТ, вкус зелёное яблоко"
+            >
         </div>
 
-        <div class="hero-button-dock">
-            <a class="shock-button" href="{% url 'store:catalog' %}"><span>ЗАБРАТЬ ЗАРЯД</span></a>
-        </div>
+        <a class="cta-button" href="{% url 'store:catalog' %}">
+            <span>ЗАБРАТЬ</span>
+        </a>
     </div>
-    {% else %}
-    <div class="hero-stage hero-stage--fallback">
-        <a class="shock-button" href="{% url 'store:catalog' %}"><span>ЗАБРАТЬ ЗАРЯД</span></a>
-    </div>
-    {% endif %}
 </section>
 {% endblock %}

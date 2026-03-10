@@ -1,14 +1,11 @@
 from django.shortcuts import render
-
 from .models import Product
 
 
 def home(request):
-    products = Product.objects.filter(is_active=True)
-    hero = products.filter(hero_product=True).first() or products.first()
-    return render(request, "store/home.html", {"hero": hero})
+    return render(request, "store/home.html")
 
 
 def catalog(request):
-    products = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True).order_by("sort_order", "id")
     return render(request, "store/catalog.html", {"products": products})

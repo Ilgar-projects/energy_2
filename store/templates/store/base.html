@@ -4,31 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}СТАРТ{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'store/css/styles.css' %}?v=4">
-    <link rel="icon" href="{% static 'store/img/favicon.svg' %}" type="image/svg+xml">
+    <title>{% block title %}Сайт{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'store/css/styles.css' %}">
 </head>
 <body>
-<div class="ambient ambient--pink"></div>
-<div class="ambient ambient--blue"></div>
-<div class="ambient ambient--orange"></div>
-<div class="energy-streaks"></div>
-
-<header class="site-header">
-    <div class="page-shell site-header__inner">
-        <a href="{% url 'store:home' %}" class="brand" aria-label="СТАРТ — главная">
-            <span class="brand-mark">▲</span>
-            <span class="brand-text">СТАРТ</span>
-        </a>
+    <header class="site-header">
         <nav class="site-nav">
             <a href="{% url 'store:home' %}">Главная</a>
-            <a href="{% url 'store:catalog' %}">Ассортимент</a>
+            <a href="{% url 'store:catalog' %}">Каталог</a>
         </nav>
-    </div>
-</header>
+    </header>
 
-<main>
-    {% block content %}{% endblock %}
-</main>
+    <main class="page-wrap">
+        {% block content %}{% endblock %}
+    </main>
 </body>
 </html>
