@@ -2,54 +2,60 @@
 {% block title %}Каталог{% endblock %}
 
 {% block content %}
-<section class="page page--background catalog-page" aria-label="Каталог">
-    <div class="catalog-fx catalog-fx--1"></div>
-    <div class="catalog-fx catalog-fx--2"></div>
-    <div class="catalog-fx catalog-fx--3"></div>
+<section class="page page--background catalog-page premium-catalog" aria-label="Каталог">
+    <div class="catalog-noise"></div>
+    <div class="catalog-beam catalog-beam--left"></div>
+    <div class="catalog-beam catalog-beam--right"></div>
+    <div class="catalog-orb catalog-orb--pink"></div>
+    <div class="catalog-orb catalog-orb--green"></div>
+    <div class="catalog-orb catalog-orb--blue"></div>
 
     <div class="catalog-container">
-        <div class="catalog-intro">
-            <p class="catalog-kicker">КАТАЛОГ ЭНЕРГИИ</p>
-            <h1>ВЫБЕРИ СВОЙ <span>СТАРТ</span></h1>
+        <div class="catalog-intro premium-intro">
+            <p class="catalog-kicker">ЭНЕРГИЯ НОВОГО УРОВНЯ</p>
+                <h1>ЗАБИРАЙ СВОЙ <span>СТАРТ</span></h1>
             <p class="catalog-subtitle">
-                4 вкуса. Яркий дизайн. Мощный заряд.
+        Яркие вкусы. Мощный заряд. Выбирай свой вкус и забирай энергию прямо сейчас.
             </p>
         </div>
 
-        <div class="catalog-grid">
+        <div class="catalog-grid premium-grid">
             {% for product in products %}
-                <article class="product-card product-card--{{ product.sort_order }}">
-                    <div class="product-card__shine"></div>
+                <article class="product-card premium-card product-card--{{ product.sort_order }}" data-tilt-card>
+                    <div class="premium-card__border"></div>
+                    <div class="premium-card__shine"></div>
+                    <div class="premium-card__particle premium-card__particle--1"></div>
+                    <div class="premium-card__particle premium-card__particle--2"></div>
 
-                    <div class="product-card__image-wrap">
-                        <div class="product-card__glow"></div>
+                    <div class="product-card__image-wrap premium-card__image-wrap">
+                        <div class="product-card__glow premium-card__glow"></div>
+                        <div class="premium-card__halo"></div>
                         <img src="{{ product.image_url }}" alt="{{ product.flavor }}">
                     </div>
 
-                    <div class="product-card__content">
-                        <p class="product-card__brand">СТАРТ</p>
+                    <div class="product-card__content premium-card__content">
+                        <p class="product-card__brand premium-card__brand">СТАРТ</p>
 
-                        <div class="product-card__row">
+                        <div class="product-card__row premium-card__row">
                             <span>Вкус</span>
                             <strong>{{ product.flavor }}</strong>
                         </div>
 
-                        <div class="product-card__row">
-                            <span>Наличие</span>
+                        <div class="product-card__row premium-card__row product-card__row--stock">
                             <strong>{{ product.stock_label }}</strong>
                         </div>
 
-                        <div class="product-card__row">
+                        <div class="product-card__row premium-card__row">
                             <span>Цена</span>
                             <strong>{{ product.price|floatformat:0 }} ₽</strong>
                         </div>
 
                         {% if product.stock > 0 %}
-                            <a href="#" class="product-button">
+                            <a href="#" class="product-button premium-button">
                                 <span>ЗАБРАТЬ</span>
                             </a>
                         {% else %}
-                            <span class="product-button product-button--disabled">
+                            <span class="product-button product-button--disabled premium-button">
                                 <span>НЕТ В НАЛИЧИИ</span>
                             </span>
                         {% endif %}
@@ -63,4 +69,32 @@
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const cards = document.querySelectorAll("[data-tilt-card]");
+
+    cards.forEach((card) => {
+        card.addEventListener("mousemove", (e) => {
+            if (window.innerWidth <= 991) return;
+
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateY = ((x - centerX) / centerX) * 7;
+            const rotateX = ((centerY - y) / centerY) * 7;
+
+            card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-10px)`;
+        });
+
+        card.addEventListener("mouseleave", () => {
+            card.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg) translateY(0)";
+        });
+    });
+});
+</script>
 {% endblock %}
