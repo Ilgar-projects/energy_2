@@ -17,6 +17,7 @@ body {
 
 img {
     max-width: 100%;
+    display: block;
 }
 
 .site-header {
@@ -111,7 +112,6 @@ img {
 .hero__can {
     position: relative;
     z-index: 1;
-    display: block;
     width: 100%;
     height: auto;
     filter: drop-shadow(0 26px 40px rgba(0, 0, 0, 0.55));
@@ -326,7 +326,6 @@ img {
     z-index: 1;
     width: min(100%, 280px);
     height: auto;
-    display: block;
     filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.58));
     transition: transform 0.28s ease;
 }
@@ -375,6 +374,18 @@ img {
     font-weight: 900;
     text-align: right;
     color: #ffffff;
+}
+
+.product-card__row--stock {
+    justify-content: center;
+    text-align: center;
+}
+
+.product-card__row--stock strong {
+    width: 100%;
+    text-align: center;
+    font-size: 17px;
+    letter-spacing: 0.03em;
 }
 
 .product-button {
@@ -485,7 +496,7 @@ img {
     height: 260px;
     bottom: 40px;
     left: 50%;
-    transform: translateX(-50%);
+    margin-left: -130px;
     background: rgba(124, 255, 1, 0.18);
     animation-delay: 0.7s;
 }
@@ -570,7 +581,7 @@ img {
     height: 260px;
     bottom: 80px;
     left: 50%;
-    transform: translateX(-50%);
+    margin-left: -130px;
     background: rgba(0, 180, 255, 0.22);
     animation-delay: 0.8s;
 }
@@ -748,6 +759,50 @@ img {
 }
 
 /* =========================
+   PAGE INTRO SPLASH
+   ========================= */
+
+.page-intro-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 1;
+    visibility: visible;
+    will-change: opacity;
+    animation: introSplashFadeOut 5s linear forwards;
+}
+
+.page-intro-splash::before {
+    content: "";
+    position: absolute;
+    inset: -3%;
+    background-image: url('../img/background.png');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: translateZ(0) scale(1.04);
+    filter: brightness(1.22) saturate(1.14) contrast(1.06) blur(0px);
+    will-change: transform, filter;
+    backface-visibility: hidden;
+    animation: introSplashVisual 5s ease-out forwards;
+}
+
+.page-intro-splash::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.24) 22%, rgba(255, 255, 255, 0.06) 42%, rgba(255, 255, 255, 0) 64%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 32%, rgba(0, 0, 0, 0.06));
+    mix-blend-mode: screen;
+    opacity: 0.9;
+    will-change: opacity;
+    animation: introSplashGlowFade 5s linear forwards;
+}
+
+/* =========================
    ANIMATIONS
    ========================= */
 
@@ -805,6 +860,45 @@ img {
     }
 }
 
+@keyframes introSplashFadeOut {
+    0% {
+        opacity: 1;
+        visibility: visible;
+    }
+    70% {
+        opacity: 0.35;
+        visibility: visible;
+    }
+    88% {
+        opacity: 0.08;
+        visibility: visible;
+    }
+    100% {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes introSplashVisual {
+    0% {
+        transform: translateZ(0) scale(1.04);
+        filter: brightness(1.22) saturate(1.14) contrast(1.06) blur(0px);
+    }
+    100% {
+        transform: translateZ(0) scale(1);
+        filter: brightness(1) saturate(1) contrast(1) blur(8px);
+    }
+}
+
+@keyframes introSplashGlowFade {
+    0% {
+        opacity: 0.9;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
 /* =========================
    RESPONSIVE
    ========================= */
@@ -829,6 +923,10 @@ img {
     .catalog-orb--blue {
         width: 220px;
         height: 220px;
+    }
+
+    .catalog-orb--blue {
+        margin-left: -110px;
     }
 
     .catalog-orb--green {
@@ -932,16 +1030,25 @@ img {
     .catalog-noise {
         opacity: 0.75;
     }
+
+    .page-intro-splash::before {
+        inset: -4%;
+    }
 }
 
-.product-card__row--stock {
-    justify-content: center;
-    text-align: center;
-}
+@media (prefers-reduced-motion: reduce) {
+    .hero__can,
+    .catalog-fx,
+    .catalog-orb,
+    .premium-card__particle,
+    .premium-card__halo,
+    .page-intro-splash,
+    .page-intro-splash::before,
+    .page-intro-splash::after {
+        animation: none !important;
+    }
 
-.product-card__row--stock strong {
-    width: 100%;
-    text-align: center;
-    font-size: 17px;
-    letter-spacing: 0.03em;
+    .page-intro-splash {
+        display: none;
+    }
 }
