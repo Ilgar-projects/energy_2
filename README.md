@@ -1,117 +1,314 @@
 # СТАРТ — сайт продажи энергетиков
 
-> В этой версии фронт заметно переделан под макет. Если в браузере вдруг виден старый стиль, нажми **Ctrl+F5** или перезапусти контейнеры через `docker compose down -v && docker compose up --build`.
+Теперь в проект добавлен **production-деплой через GitHub Actions + Docker Compose + Caddy** для домена:
 
-Готовый Django-проект для локального запуска на Windows 10 через Docker Desktop и Docker Compose.
+- `sharashkinakontora.shop`
+- `www.sharashkinakontora.shop`
 
-## Что уже есть
+## Что есть теперь
 
-- главная страница с большой банкой и кнопкой **«ЗАБРАТЬ ЗАРЯД»**
-- страница каталога с 4 энергетиками
-- адаптивная вёрстка для компьютера и смартфона
-- PostgreSQL в Docker Compose
-- Django Admin, где можно менять:
-  - картинку товара
-  - название вкуса
-  - цену
-  - количество в наличии
-  - порядок вывода
-  - активность товара
+- локальный запуск через `docker compose up --build`
+- production-запуск через `docker-compose.prod.yml`
+- автоматический деплой по `git push` в `main` или `master`
+- проксирование домена и HTTPS через **Caddy**
+- PostgreSQL в отдельном контейнере
+- Gunicorn для Django
+- автоматические миграции и `collectstatic`
+- автоматическое создание админа, если заполнены переменные `DJANGO_SUPERUSER_*`
 
-## Стек
+---
 
-- Python 3.12
-- Django 5
-- PostgreSQL 16
-- Docker / Docker Compose
+## 1. Что нужно на сервере
 
-## Как запустить
+Нужен VPS / сервер с Ubuntu и публичным IP.
 
-### 1. Распакуй архив
-Например в папку:
+На сервере должны быть установлены:
+
+- Docker Engine
+- Docker Compose plugin
+
+Пример базовой подготовки сервера:
 
 ```bash
-C:\projects\start_energy_shop
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker $USER
 ```
 
-### 2. Создай файл `.env`
-Скопируй `.env.example` в `.env`
+Потом перелогинься на сервер и проверь:
 
-Пример для локального запуска:
+```bash
+docker --version
+docker compose version
+```
+
+---
+
+## 2. DNS для домена
+
+У регистратора домена создай записи:
+
+- `A` для `@` → IP твоего сервера
+- `A` для `www` → IP твоего сервера
+
+После обновления DNS домен должен открываться на сервер.
+
+Важно: для автоматического HTTPS должны быть открыты порты:
+
+- `80`
+- `443`
+
+Если на сервере включён firewall, открой их:
+
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+```
+
+---
+
+## 3. Какие GitHub secrets добавить
+
+В GitHub открой:
+
+`Repository -> Settings -> Secrets and variables -> Actions`
+
+И создай secrets:
+
+### `SSH_HOST`
+IP адрес сервера
+
+Пример:
+
+```text
+123.123.123.123
+```
+
+### `SSH_PORT`
+Обычно:
+
+```text
+22
+```
+
+### `SSH_USER`
+Пользователь сервера
+
+Пример:
+
+```text
+root
+```
+
+или
+
+```text
+ubuntu
+```
+
+### `SSH_PRIVATE_KEY`
+Приватный SSH-ключ, которым GitHub Actions будет входить на сервер.
+
+Обычно это содержимое файла:
+
+```text
+~/.ssh/id_ed25519
+```
+
+### `SSH_KNOWN_HOSTS`
+Хост-ключ сервера.
+
+На своём компьютере можно получить так:
+
+```bash
+ssh-keyscan -H sharashkinakontora.shop
+```
+
+или так:
+
+```bash
+ssh-keyscan -H 123.123.123.123
+```
+
+Весь вывод вставь в secret целиком.
+
+### `DEPLOY_PATH`
+Папка проекта на сервере.
+
+Пример:
+
+```text
+/opt/energy_2
+```
+
+### `DJANGO_ENV_FILE`
+Это **весь текст production `.env` файла**, вставленный в secret целиком.
+
+Готовый пример:
+
+```env
+SECRET_KEY=django-insecure-change-me-very-long-production-key
+DEBUG=0
+ALLOWED_HOSTS=sharashkinakontora.shop,www.sharashkinakontora.shop
+CSRF_TRUSTED_ORIGINS=https://sharashkinakontora.shop,https://www.sharashkinakontora.shop
+POSTGRES_DB=start_energy
+POSTGRES_USER=start_user
+POSTGRES_PASSWORD=super-strong-password
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+FORCE_HTTPS=1
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_EMAIL=admin@sharashkinakontora.shop
+DJANGO_SUPERUSER_PASSWORD=replace-this-password-now
+```
+
+---
+
+## 4. Как подготовить SSH-ключ
+
+Если ключа ещё нет, на своём компьютере создай его:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy"
+```
+
+Потом:
+
+- **публичный ключ** (`id_ed25519.pub`) добавь на сервер в `~/.ssh/authorized_keys`
+- **приватный ключ** (`id_ed25519`) вставь в GitHub secret `SSH_PRIVATE_KEY`
+
+Если заходишь под `root`:
+
+```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+Вставь туда содержимое `id_ed25519.pub`.
+
+---
+
+## 5. Первый запуск вручную на сервере
+
+GitHub Actions сам создаст папку и всё зальёт, но лучше один раз подготовить каталог:
+
+```bash
+mkdir -p /opt/energy_2
+```
+
+Если пользователь не в группе docker, временно можно запускать через `sudo`, но лучше сразу выдать права через группу docker.
+
+---
+
+## 6. Как работает деплой
+
+После `git push` в `main` или `master` GitHub Actions:
+
+1. подключается к серверу по SSH
+2. копирует проект в папку `DEPLOY_PATH`
+3. записывает `.env` из секрета `DJANGO_ENV_FILE`
+4. выполняет:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+---
+
+## 7. Что смотреть на сервере, если что-то не так
+
+Логи контейнеров:
+
+```bash
+cd /opt/energy_2
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+Статус контейнеров:
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+```
+
+Перезапуск:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Остановка:
+
+```bash
+docker compose -f docker-compose.prod.yml down
+```
+
+---
+
+## 8. Локальный запуск как раньше
+
+Для локальной разработки оставлен обычный файл:
+
+```bash
+docker compose up --build
+```
+
+Пример локального `.env`:
 
 ```env
 SECRET_KEY=django-insecure-change-me
 DEBUG=1
 ALLOWED_HOSTS=127.0.0.1,localhost
+CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
 POSTGRES_DB=start_energy
 POSTGRES_USER=start_user
 POSTGRES_PASSWORD=start_password
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
+FORCE_HTTPS=0
 ```
 
-### 3. Открой проект в PyCharm
+---
 
-### 4. Запусти контейнеры
-Из корня проекта:
+## 9. Важный момент по картинкам товаров
 
-```bash
-docker compose up --build
-```
+В production добавлен постоянный том для `media`, чтобы загруженные картинки не пропадали при деплое.
 
-Сайт будет доступен по адресу:
+При первом запуске проект автоматически копирует стартовые изображения из проекта в volume.
 
-```bash
-http://127.0.0.1:8000/
-```
+---
 
-## Админка
+## 10. Файлы, которые добавлены для продакшена
 
-Чтобы создать администратора, в новом терминале выполни:
+- `.github/workflows/deploy.yml`
+- `docker-compose.prod.yml`
+- `Caddyfile`
+- `entrypoint.prod.sh`
+- `.dockerignore`
 
-```bash
-docker compose exec web python manage.py createsuperuser
-```
+---
 
-Админка:
+## 11. Что делать дальше
 
-```bash
-http://127.0.0.1:8000/admin/
-```
+1. Загрузи проект в GitHub
+2. Добавь secrets
+3. Настрой DNS домена на IP сервера
+4. Сделай `git push`
+5. Подожди, пока workflow завершится
+6. Открой:
+   - `https://sharashkinakontora.shop`
+   - `https://www.sharashkinakontora.shop`
 
-## Как менять товары
-
-Открой админку и зайди в раздел **Products**.
-
-У каждого товара можно менять:
-
-- `name` — название продукта
-- `flavor` — вкус
-- `price` — цена
-- `stock` — остаток на складе
-- `image` — картинка банки
-- `is_active` — показывать или скрывать товар
-- `sort_order` — порядок карточек в каталоге
-- `hero_product` — сделать банку главной на первом экране
-
-## Полезно знать
-
-- При первом запуске проект сам создаёт 4 демо-товара.
-- Команда заполнения тестовыми данными не создаёт дубликаты.
-- Картинки лежат в папке `media/products/`.
-- Для реального продакшена позже можно добавить Nginx, Gunicorn, корзину и оформление заказа.
-
-## Остановка
-
-```bash
-docker compose down
-```
-
-## Сброс базы
-
-Если захочешь начать с чистого листа:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
+Если DNS уже смотрит на сервер и порты 80/443 открыты, Caddy сам выпустит сертификат.

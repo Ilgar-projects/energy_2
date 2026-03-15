@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-RUN chmod +x /app/entrypoint.sh
+RUN mkdir -p /app/media_seed     && if [ -d /app/media ]; then cp -r /app/media/. /app/media_seed/; fi     && chmod +x /app/entrypoint.sh /app/entrypoint.prod.sh
 
 EXPOSE 8000
 

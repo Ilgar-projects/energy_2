@@ -7,6 +7,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key")
 DEBUG = os.getenv("DEBUG", "1") == "1"
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -62,9 +63,18 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = "ru-ru"
-TIME_ZONE = "Europe/Moscow"
+TIME_ZONE = "Europe/Berlin"
 USE_I18N = True
 USE_TZ = True
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+FORCE_HTTPS = os.getenv("FORCE_HTTPS", "0") == "1"
+SECURE_SSL_REDIRECT = FORCE_HTTPS and not DEBUG
+SESSION_COOKIE_SECURE = FORCE_HTTPS and not DEBUG
+CSRF_COOKIE_SECURE = FORCE_HTTPS and not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "store" / "static"]
