@@ -17,7 +17,7 @@ services:
       retries: 20
 
   web:
-    build: .
+    image: ${DOCKERHUB_USERNAME}/energy_2:latest
     restart: unless-stopped
     env_file:
       - .env

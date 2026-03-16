@@ -1,4 +1,4 @@
-name: Deploy energy shop
+name: Build, push and deploy energy shop
 
 on:
   push:
@@ -8,14 +8,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build_and_push:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare SSH
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/energy_2:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/energy_2:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH env
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
@@ -35,21 +59,15 @@ jobs:
         run: |
           ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "mkdir -p '$DEPLOY_PATH'"
 
-      - name: Sync project to server
+      - name: Upload deployment files
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          rsync -az --delete \
-            -e "ssh -p ${SSH_PORT:-22}" \
-            --exclude '.git/' \
-            --exclude '.github/' \
-            --exclude '.env' \
-            --exclude 'postgres_data/' \
-            --exclude 'staticfiles/' \
-            ./ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+          scp -P "${SSH_PORT:-22}" docker-compose.prod.yml "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/docker-compose.prod.yml"
+          scp -P "${SSH_PORT:-22}" Caddyfile "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/Caddyfile"
 
       - name: Upload production env file
         env:
@@ -74,6 +92,7 @@ jobs:
           ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "\
             set -e && \
             cd '$DEPLOY_PATH' && \
-            docker compose -f docker-compose.prod.yml up -d --build && \
+            docker compose -f docker-compose.prod.yml pull && \
+            docker compose -f docker-compose.prod.yml up -d && \
             docker image prune -f \
           "
